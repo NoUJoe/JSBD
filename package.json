@@ -1,0 +1,10 @@
+{
+    "name": "jsbd",
+    "version": "0.0.69",
+    "description": "A Big Decimal library that follows Javascript conventions and semantics.",
+    "main": "jsbd.js",
+    "author": "NoUJoe",
+    "type": "module",
+    "types": "jsbd.d.ts"
+  }
+  
