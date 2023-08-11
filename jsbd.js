@@ -2263,7 +2263,8 @@ export default class JSBD
     {
         //mimics https://tc39.es/ecma262/multipage/abstract-operations.html#sec-tonumber
         //allows NaN, undefined etc.
-        digits = Math.trunc (digits);
+        digits = +digits;
+        digits = ~~digits;
 
         if (digits < 0 || digits > 100) throw new RangeError ("toFixed() digits argument must be between 0 and 100");
         
@@ -2367,7 +2368,8 @@ export default class JSBD
     {
         //mimics https://tc39.es/ecma262/multipage/abstract-operations.html#sec-tonumber
         //allows NaN, undefined etc.
-        fractionDigits = Math.trunc (fractionDigits);
+        fractionDigits = +fractionDigits;
+        fractionDigits = ~~fractionDigits;
 
         if (fractionDigits < 0 || fractionDigits > 100) throw new RangeError ("toExponential() fractionDigits argument must be between 0 and 100");
 
@@ -2545,7 +2547,8 @@ export default class JSBD
     {
         //mimics https://tc39.es/ecma262/multipage/abstract-operations.html#sec-tonumber
         //allows NaN, undefined etc.
-        precision = Math.trunc (precision);
+        precision = +precision;
+        precision = ~~precision;
         
         if (precision < 1 || precision > 100) throw new RangeError ("toPrecision() precision argument must be between 1 and 100");
 
