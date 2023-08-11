@@ -558,6 +558,17 @@ export default class JSBD
 
     static #DoRound (strVal, decPlaces, maxFractionDigits, roundingMode, roundIncrSetup)
     {
+        if (roundingMode === "trunc" && roundIncrSetup.incrVal === 1)
+        {
+            if (maxFractionDigits >= decPlaces) return JSBD.#Make (strVal, decPlaces);
+            else
+            {
+                let i = this.#strVal.length - (this.#decPlaces - maxFractionDigits);
+
+                return JSBD.#Make (this.#strVal.substring (0, i), maxFractionDigits);
+            }
+        }
+        
         let isNegative = strVal.codePointAt (0) === 45;
 
         let firstNumIndex = isNegative ? 1 : 0;
