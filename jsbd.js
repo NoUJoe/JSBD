@@ -558,14 +558,14 @@ export default class JSBD
 
     static #DoRound (strVal, decPlaces, maxFractionDigits, roundingMode, roundIncrSetup)
     {
-        if (roundingMode === "trunc" && roundIncrSetup.incrVal === 1)
+        if (roundingMode === "trunc" && roundIncrSetup.incrVal === 1n)
         {
             if (maxFractionDigits >= decPlaces) return JSBD.#Make (strVal, decPlaces);
             else
             {
-                let i = this.#strVal.length - (this.#decPlaces - maxFractionDigits);
+                let i = strVal.length - (decPlaces - maxFractionDigits);
 
-                return JSBD.#Make (this.#strVal.substring (0, i), maxFractionDigits);
+                return JSBD.#Make (JSBD.#StripTrailingZeros (strVal.substring (0, i), maxFractionDigits), maxFractionDigits);
             }
         }
         

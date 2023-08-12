@@ -706,6 +706,8 @@ let expect = function (value)
     expect (JSBD.equal (JSBD.BigD ("-1.1110001"), JSBD.BigD ("-1.1110001"))).toEqual (true);
     expect (JSBD.equal (JSBD.BigD ("-2.22"), JSBD.BigD ("-1.11111111111111"))).toEqual (false);
     expect (JSBD.equal (JSBD.BigD ("-3.49012"), JSBD.BigD ("-4.202"))).toEqual (false);
+
+    expect (JSBD.equal (JSBD.BigD ("123.0004"), JSBD.BigD ("0.1234"))).toEqual (false);
 }
 
 //#######################################################
