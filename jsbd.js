@@ -1005,25 +1005,25 @@ export default class JSBD
 
         resultDecPlaces -= preAbsLength - postAbsLength;
         
-        let diff = postAbsLength - (resultDecPlaces);
-
-        if (diff <= 0)
+        if (postAbsLength <= resultDecPlaces)
         {
+            let diff = resultDecPlaces - postAbsLength;
+
             if (typeof roundOpts === "object")
             {
-                return JSBD.#internalRound (`${signStr}${"0".repeat (-diff + 1)}${addedAbsAsStr}`, -diff + postAbsLength, roundOpts);
+                return JSBD.#internalRound (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces, roundOpts);
             }
 
-            return JSBD.#Make (`${signStr}${"0".repeat (-diff + 1)}${addedAbsAsStr}`, -diff + postAbsLength);
+            return JSBD.#Make (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces);
         }
         else
         {
             if (typeof roundOpts === "object")
             {
-                return JSBD.#internalRound (signStr + addedAbsAsStr, postAbsLength - diff, roundOpts);
+                return JSBD.#internalRound (signStr + addedAbsAsStr, resultDecPlaces, roundOpts);
             }
             
-            return JSBD.#Make (signStr + addedAbsAsStr, postAbsLength - diff);
+            return JSBD.#Make (signStr + addedAbsAsStr, resultDecPlaces);
         }
     }
 
@@ -1076,26 +1076,26 @@ export default class JSBD
         if (postAbsLength === 0) return JSBD.#ZERO;
 
         resultDecPlaces -= preAbsLength - postAbsLength;
-        
-        let diff = postAbsLength - (resultDecPlaces);
 
-        if (diff <= 0)
+        if (postAbsLength <= resultDecPlaces)
         {
+            let diff = resultDecPlaces - postAbsLength;
+
             if (typeof roundOpts === "object")
             {
-                return JSBD.#internalRound (`${signStr}${"0".repeat (-diff + 1)}${addedAbsAsStr}`, -diff + postAbsLength, roundOpts);
+                return JSBD.#internalRound (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces, roundOpts);
             }
 
-            return JSBD.#Make (`${signStr}${"0".repeat (-diff + 1)}${addedAbsAsStr}`, -diff + postAbsLength);
+            return JSBD.#Make (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces);
         }
         else
         {
             if (typeof roundOpts === "object")
             {
-                return JSBD.#internalRound (signStr + addedAbsAsStr, postAbsLength - diff, roundOpts);
+                return JSBD.#internalRound (signStr + addedAbsAsStr, resultDecPlaces, roundOpts);
             }
 
-            return JSBD.#Make (signStr + addedAbsAsStr, postAbsLength - diff);
+            return JSBD.#Make (signStr + addedAbsAsStr, resultDecPlaces);
         }
     }
 
@@ -1104,22 +1104,10 @@ export default class JSBD
         let resultDecPlaces;
         let strAsInt, str2AsInt;
 
-        let dDiff = lhs.#decPlaces - rhs.#decPlaces;
+        resultDecPlaces = lhs.#decPlaces + rhs.#decPlaces;
 
-        if (dDiff > 0)
-        {
-            resultDecPlaces = lhs.#decPlaces * 2;
-
-            strAsInt = BigInt (lhs.#strVal);
-            str2AsInt = BigInt (`${rhs.#strVal}${"0".repeat (dDiff)}`);
-        }
-        else
-        {
-            resultDecPlaces = rhs.#decPlaces * 2;
-
-            strAsInt = BigInt (`${lhs.#strVal}${"0".repeat (-dDiff)}`);
-            str2AsInt = BigInt (rhs.#strVal);
-        }
+        strAsInt = BigInt (lhs.#strVal);
+        str2AsInt = BigInt (rhs.#strVal);
 
         let added = strAsInt * str2AsInt;
 
@@ -1144,26 +1132,26 @@ export default class JSBD
         if (postAbsLength === 0) return JSBD.#ZERO;
 
         resultDecPlaces -= preAbsLength - postAbsLength;
-        
-        let diff = postAbsLength - (resultDecPlaces);
 
-        if (diff <= 0)
+        if (postAbsLength <= resultDecPlaces)
         {
+            let diff = resultDecPlaces - postAbsLength;
+
             if (typeof roundOpts === "object")
             {
-                return JSBD.#internalRound (`${signStr}${"0".repeat (-diff + 1)}${addedAbsAsStr}`, -diff + postAbsLength, roundOpts);
+                return JSBD.#internalRound (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces, roundOpts);
             }
 
-            return JSBD.#Make (`${signStr}${"0".repeat (-diff + 1)}${addedAbsAsStr}`, -diff + postAbsLength);
+            return JSBD.#Make (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces);
         }
         else
         {
             if (typeof roundOpts === "object")
             {
-                return JSBD.#internalRound (signStr + addedAbsAsStr, postAbsLength - diff, roundOpts);
+                return JSBD.#internalRound (signStr + addedAbsAsStr, resultDecPlaces, roundOpts);
             }
 
-            return JSBD.#Make (signStr + addedAbsAsStr, postAbsLength - diff);
+            return JSBD.#Make (signStr + addedAbsAsStr, resultDecPlaces);
         }
     }
 
@@ -1251,20 +1239,15 @@ export default class JSBD
 
         zeroCount -= preAbsLength - postAbsLength;
         
-        let diff = postAbsLength - zeroCount;
-
-        if (diff <= 0)
+        if (postAbsLength <= zeroCount)
         {
-            let newDecCount = -diff + postAbsLength;
+            let diff = zeroCount - postAbsLength;
 
-            return JSBD.#DoRound (`${signStr}${"0".repeat (-diff + 1)}${addedAbsAsStr}`, newDecCount, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
+            return JSBD.#DoRound (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, zeroCount, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
         }
         else
         {
-            //todo: think this is just zeroCount
-            let newDecCount = postAbsLength - diff;
-
-            return JSBD.#DoRound (signStr + addedAbsAsStr, newDecCount, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
+            return JSBD.#DoRound (signStr + addedAbsAsStr, zeroCount, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
         }
     }
 
@@ -1318,16 +1301,16 @@ export default class JSBD
 
         resultDecPlaces -= preAbsLength - postAbsLength;
         
-        let diff = postAbsLength - (resultDecPlaces);
-
-        if (diff <= 0)
+        if (postAbsLength <= resultDecPlaces)
         {
+            let diff = resultDecPlaces - postAbsLength;
+
             if (typeof roundOpts === "object")
             {
-                return JSBD.#internalRound (`${signStr}${"0".repeat (-diff + 1)}${addedAbsAsStr}`, resultDecPlaces, roundOpts);
+                return JSBD.#internalRound (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces, roundOpts);
             }
 
-            return JSBD.#Make (`${signStr}${"0".repeat (-diff + 1)}${addedAbsAsStr}`, resultDecPlaces);
+            return JSBD.#Make (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces);
         }
         else
         {
@@ -1509,16 +1492,16 @@ export default class JSBD
             if (postAbsLength === 0) return JSBD.#ZERO;
 
             resultDecPlaces -= preAbsLength - postAbsLength;
-            
-            let diff = postAbsLength - (resultDecPlaces);
 
-            if (diff <= 0)
+            if (postAbsLength <= resultDecPlaces)
             {
-                return JSBD.#DoRound (`${signStr}${"0".repeat (-diff + 1)}${addedAbsAsStr}`, -diff + postAbsLength, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
+                let diff = resultDecPlaces - postAbsLength;
+
+                return JSBD.#DoRound (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
             }
             else
             {
-                return JSBD.#DoRound (signStr + addedAbsAsStr, postAbsLength - diff, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
+                return JSBD.#DoRound (signStr + addedAbsAsStr, resultDecPlaces, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
             }
         }
     }
