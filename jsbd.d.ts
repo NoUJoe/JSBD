@@ -24,6 +24,9 @@ export default class JSBD
     static subtract(lhs: JSBD, rhs: JSBD, roundOpts?: DecimalRoundingOptions): JSBD;
     static multiply(lhs: JSBD, rhs: JSBD, roundOpts?: DecimalRoundingOptions): JSBD;
     static divide(lhs: JSBD, rhs: JSBD, roundOpts?: DecimalRoundingOptions): JSBD;
+    static divideSignif1(lhs: JSBD, rhs: JSBD, roundOpts?: DecimalRoundingOptions): JSBD;
+    static divideSignif2(lhs: JSBD, rhs: JSBD, roundOpts?: DecimalRoundingOptions): JSBD;
+    static divideSignif3(lhs: JSBD, rhs: JSBD, roundOpts?: DecimalRoundingOptions): JSBD;
     static remainder(lhs: JSBD, rhs: JSBD, roundOpts?: DecimalRoundingOptions): JSBD;
     static exponentiate(lhs: JSBD, rhs: JSBD, roundOpts?: DecimalRoundingOptions): JSBD;
     

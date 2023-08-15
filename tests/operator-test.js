@@ -235,6 +235,10 @@ let expect = function (value)
 
     //Is returning 0 acceptable?                            1 with 35 zeros
     expect (JSBD.divide (JSBD.BigD ("1"), JSBD.BigD ("100000000000000000000000000000000000")).toString ()).toEqual ("0");
+    //                                      34
+    expect (JSBD.divide (JSBD.BigD ("0.0000000000000000000000000000000001"), JSBD.BigD ("1")).toString ()).toEqual ("0.0000000000000000000000000000000001");
+    //                                      35
+    expect (JSBD.divide (JSBD.BigD ("0.00000000000000000000000000000000001"), JSBD.BigD ("1")).toString ()).toEqual ("0");
 
     expect (JSBD.divide (JSBD.BigD ("1"), JSBD.BigD ("696969696969696969696969696969696969"), {
         maximumFractionDigits: 40
@@ -275,9 +279,229 @@ let expect = function (value)
     expect (JSBD.divide (JSBD.BigD ("1.57642"), JSBD.BigD ("9.50956")).toString ()).toEqual ("0.1657721282583000685625833371891023");
     expect (JSBD.divide (JSBD.BigD ("7.837343"), JSBD.BigD ("3.2874")).toString ()).toEqual ("2.3840551803857151548336071059195717");
 
+    expect (JSBD.divide (JSBD.BigD ("999999999999999999999999.0696753743"), JSBD.BigD ("999999999999999999999998.0468364135")).toString ()).toEqual ("1.0000000000000000000000010228389608");
+
     expect (() => JSBD.divide (JSBD.BigD ("0"), JSBD.BigD ("0")).toString ()).toThrow ("Division by zero");
 }
 
+//Full integer precision, fractional precision varies depending on integer significant digits
+//#######################################################
+//############# / DIVIDE SIGNIFICANT 1 / ################
+//#######################################################
+//############# let num = 1.23m / 1.23m #################
+{
+    expect (JSBD.divideSignif1 (JSBD.BigD ("1"), JSBD.BigD ("2")).toString ()).toEqual ("0.5");
+    expect (JSBD.divideSignif1 (JSBD.BigD ("1"), JSBD.BigD ("69")).toString ()).toEqual ("0.01449275362318840579710144927536232");
+
+    expect (JSBD.divideSignif1 (JSBD.BigD ("1"), JSBD.BigD ("10000000000000000000000000000000000")).toString ()).toEqual ("0.0000000000000000000000000000000001");
+
+    expect (JSBD.divideSignif1 (JSBD.BigD ("0.0000000000000000000000000000000000000001"), JSBD.BigD ("0.0000000000000000000000000000000000000001")).toString ()).toEqual ("1");
+
+    expect (JSBD.divideSignif1 (JSBD.BigD ("1"), JSBD.BigD ("696969696969696969696969696969696969")).toString ()).toEqual ("0.00000000000000000000000000000000000143478260869565217391304347826087");
+
+    //                                                         1 with 35 zeros
+    expect (JSBD.divideSignif1 (JSBD.BigD ("1"), JSBD.BigD ("100000000000000000000000000000000000")).toString ()).toEqual ("0.00000000000000000000000000000000001");
+    //                                              34
+    expect (JSBD.divideSignif1 (JSBD.BigD ("0.0000000000000000000000000000000001"), JSBD.BigD ("1")).toString ()).toEqual ("0.0000000000000000000000000000000001");
+    //                                              35
+    expect (JSBD.divideSignif1 (JSBD.BigD ("0.00000000000000000000000000000000001"), JSBD.BigD ("1")).toString ()).toEqual ("0.00000000000000000000000000000000001");
+
+    //expect (JSBD.divideSignif1 (JSBD.BigD ("333"), JSBD.BigD ("7")).toString ()).toEqual ("0.3333333333333333333333333333333333");
+    expect (JSBD.divideSignif1 (JSBD.BigD ("1"), JSBD.BigD ("33333333")).toString ()).toEqual ("0.0000000300000003000000030000000300000003");
+    expect (JSBD.divideSignif1 (JSBD.BigD ("100000000000000000000"), JSBD.BigD ("33333333")).toString ()).toEqual ("3000000030000.00030000000300000003");
+
+    //                                      0 zeros
+    expect (JSBD.divideSignif1 (JSBD.BigD ("1"), JSBD.BigD ("3")).toString ()).toEqual ("0.3333333333333333333333333333333333");
+    //                                      1 zero
+    expect (JSBD.divideSignif1 (JSBD.BigD ("10"), JSBD.BigD ("3")).toString ()).toEqual ("3.333333333333333333333333333333333");
+    //                                      2 zeros
+    expect (JSBD.divideSignif1 (JSBD.BigD ("100"), JSBD.BigD ("3")).toString ()).toEqual ("33.33333333333333333333333333333333");
+    //                                      10 zeros
+    expect (JSBD.divideSignif1 (JSBD.BigD ("10000000000"), JSBD.BigD ("3")).toString ()).toEqual ("3333333333.333333333333333333333333");
+    //                                      20 zeros
+    expect (JSBD.divideSignif1 (JSBD.BigD ("100000000000000000000"), JSBD.BigD ("3")).toString ()).toEqual ("33333333333333333333.33333333333333");
+    //                                      30 zeros
+    expect (JSBD.divideSignif1 (JSBD.BigD ("1000000000000000000000000000000"), JSBD.BigD ("3")).toString ()).toEqual ("333333333333333333333333333333.3333");
+    //                                      34 zeros
+    expect (JSBD.divideSignif1 (JSBD.BigD ("10000000000000000000000000000000000"), JSBD.BigD ("3")).toString ()).toEqual ("3333333333333333333333333333333333");
+    //                                      39 zeros
+    expect (JSBD.divideSignif1 (JSBD.BigD ("1000000000000000000000000000000000000000"), JSBD.BigD ("3")).toString ()).toEqual ("333333333333333333333333333333333333333");
+
+    //                                      0 zeros
+    expect (JSBD.divideSignif1 (JSBD.BigD ("1"), JSBD.BigD ("6")).toString ()).toEqual ("0.1666666666666666666666666666666667");
+    //                                      1 zero
+    expect (JSBD.divideSignif1 (JSBD.BigD ("10"), JSBD.BigD ("6")).toString ()).toEqual ("1.666666666666666666666666666666667");
+    //                                      2 zeros
+    expect (JSBD.divideSignif1 (JSBD.BigD ("100"), JSBD.BigD ("6")).toString ()).toEqual ("16.66666666666666666666666666666667");
+    //                                      10 zeros
+    expect (JSBD.divideSignif1 (JSBD.BigD ("10000000000"), JSBD.BigD ("6")).toString ()).toEqual ("1666666666.666666666666666666666667");
+    //                                      20 zeros
+    expect (JSBD.divideSignif1 (JSBD.BigD ("100000000000000000000"), JSBD.BigD ("6")).toString ()).toEqual ("16666666666666666666.66666666666667");
+    //                                      30 zeros
+    expect (JSBD.divideSignif1 (JSBD.BigD ("1000000000000000000000000000000"), JSBD.BigD ("6")).toString ()).toEqual ("166666666666666666666666666666.6667");
+    //                                      34 zeros
+    expect (JSBD.divideSignif1 (JSBD.BigD ("10000000000000000000000000000000000"), JSBD.BigD ("6")).toString ()).toEqual ("1666666666666666666666666666666667");
+    //                                      39 zeros
+    expect (JSBD.divideSignif1 (JSBD.BigD ("1000000000000000000000000000000000000000"), JSBD.BigD ("6")).toString ()).toEqual ("166666666666666666666666666666666666667");
+
+    expect (JSBD.divideSignif1 (JSBD.BigD ("999999999999999999999999.0696753743"), JSBD.BigD ("999999999999999999999998.0468364135")).toString ()).toEqual ("1.000000000000000000000001022838961");
+
+}
+
+//Integer precision fixed at x
+//#######################################################
+//############# / DIVIDE SIGNIFICANT 2 / ################
+//#######################################################
+//############# let num = 1.23m / 1.23m #################
+{
+    expect (JSBD.divideSignif2 (JSBD.BigD ("1"), JSBD.BigD ("2")).toString ()).toEqual ("0.5");
+    expect (JSBD.divideSignif2 (JSBD.BigD ("1"), JSBD.BigD ("69")).toString ()).toEqual ("0.01449275362318840579710144927536232");
+
+    expect (JSBD.divideSignif2 (JSBD.BigD ("1"), JSBD.BigD ("10000000000000000000000000000000000")).toString ()).toEqual ("0.0000000000000000000000000000000001");
+
+    expect (JSBD.divideSignif2 (JSBD.BigD ("0.0000000000000000000000000000000000000001"), JSBD.BigD ("0.0000000000000000000000000000000000000001")).toString ()).toEqual ("1");
+
+    expect (JSBD.divideSignif2 (JSBD.BigD ("1"), JSBD.BigD ("696969696969696969696969696969696969")).toString ()).toEqual ("0.00000000000000000000000000000000000143478260869565217391304347826087");
+
+    //                                                         1 with 35 zeros
+    expect (JSBD.divideSignif2 (JSBD.BigD ("1"), JSBD.BigD ("100000000000000000000000000000000000")).toString ()).toEqual ("0.00000000000000000000000000000000001");
+    //                                              34
+    expect (JSBD.divideSignif2 (JSBD.BigD ("0.0000000000000000000000000000000001"), JSBD.BigD ("1")).toString ()).toEqual ("0.0000000000000000000000000000000001");
+    //                                              35
+    expect (JSBD.divideSignif2 (JSBD.BigD ("0.00000000000000000000000000000000001"), JSBD.BigD ("1")).toString ()).toEqual ("0.00000000000000000000000000000000001");
+
+    expect (JSBD.divideSignif2 (JSBD.BigD ("1"), JSBD.BigD ("33333333")).toString ()).toEqual ("0.0000000300000003000000030000000300000003");
+    expect (JSBD.divideSignif2 (JSBD.BigD ("100000000000000000000"), JSBD.BigD ("33333333")).toString ()).toEqual ("3000000030000.00030000000300000003");
+
+    //                                      0 zeros
+    expect (JSBD.divideSignif2 (JSBD.BigD ("1"), JSBD.BigD ("3")).toString ()).toEqual ("0.3333333333333333333333333333333333");
+    //                                      1 zero
+    expect (JSBD.divideSignif2 (JSBD.BigD ("10"), JSBD.BigD ("3")).toString ()).toEqual ("3.333333333333333333333333333333333");
+    //                                      2 zeros
+    expect (JSBD.divideSignif2 (JSBD.BigD ("100"), JSBD.BigD ("3")).toString ()).toEqual ("33.33333333333333333333333333333333");
+    //                                      10 zeros
+    expect (JSBD.divideSignif2 (JSBD.BigD ("10000000000"), JSBD.BigD ("3")).toString ()).toEqual ("3333333333.333333333333333333333333");
+    //                                      20 zeros
+    expect (JSBD.divideSignif2 (JSBD.BigD ("100000000000000000000"), JSBD.BigD ("3")).toString ()).toEqual ("33333333333333333333.33333333333333");
+    //                                      30 zeros
+    expect (JSBD.divideSignif2 (JSBD.BigD ("1000000000000000000000000000000"), JSBD.BigD ("3")).toString ()).toEqual ("333333333333333333333333333333.3333");
+    //                                      34 zeros
+    expect (JSBD.divideSignif2 (JSBD.BigD ("10000000000000000000000000000000000"), JSBD.BigD ("3")).toString ()).toEqual ("3333333333333333333333333333333333");
+    //                                      39 zeros
+    expect (JSBD.divideSignif2 (JSBD.BigD ("1000000000000000000000000000000000000000"), JSBD.BigD ("3")).toString ()).toEqual ("333333333333333333333333333333333300000");
+
+    //                                      0 zeros
+    expect (JSBD.divideSignif2 (JSBD.BigD ("1"), JSBD.BigD ("6")).toString ()).toEqual ("0.1666666666666666666666666666666667");
+    //                                      1 zero
+    expect (JSBD.divideSignif2 (JSBD.BigD ("10"), JSBD.BigD ("6")).toString ()).toEqual ("1.666666666666666666666666666666667");
+    //                                      2 zeros
+    expect (JSBD.divideSignif2 (JSBD.BigD ("100"), JSBD.BigD ("6")).toString ()).toEqual ("16.66666666666666666666666666666667");
+    //                                      10 zeros
+    expect (JSBD.divideSignif2 (JSBD.BigD ("10000000000"), JSBD.BigD ("6")).toString ()).toEqual ("1666666666.666666666666666666666667");
+    //                                      20 zeros
+    expect (JSBD.divideSignif2 (JSBD.BigD ("100000000000000000000"), JSBD.BigD ("6")).toString ()).toEqual ("16666666666666666666.66666666666667");
+    //                                      30 zeros
+    expect (JSBD.divideSignif2 (JSBD.BigD ("1000000000000000000000000000000"), JSBD.BigD ("6")).toString ()).toEqual ("166666666666666666666666666666.6667");
+    //                                      34 zeros
+    expect (JSBD.divideSignif2 (JSBD.BigD ("10000000000000000000000000000000000"), JSBD.BigD ("6")).toString ()).toEqual ("1666666666666666666666666666666667");
+    //                                      39 zeros
+    expect (JSBD.divideSignif2 (JSBD.BigD ("1000000000000000000000000000000000000000"), JSBD.BigD ("6")).toString ()).toEqual ("166666666666666666666666666666666600000");
+
+    expect (JSBD.divideSignif2 (JSBD.BigD ("999999999999999999999999.0696753743"), JSBD.BigD ("999999999999999999999998.0468364135")).toString ()).toEqual ("1.000000000000000000000001022838961");
+}
+
+//Full integer precision, if <1 && >-1 then fractional precision is `maxFractionDigits` significant digits, else fraction is `maxFractionDigits`
+//#######################################################
+//############# / DIVIDE SIGNIFICANT 3 / ################
+//#######################################################
+//############# let num = 1.23m / 1.23m #################
+{
+    expect (JSBD.divideSignif3 (JSBD.BigD ("1"), JSBD.BigD ("2")).toString ()).toEqual ("0.5");
+    expect (JSBD.divideSignif3 (JSBD.BigD ("1"), JSBD.BigD ("69")).toString ()).toEqual ("0.01449275362318840579710144927536232");
+
+    expect (JSBD.divideSignif3 (JSBD.BigD ("1"), JSBD.BigD ("10000000000000000000000000000000000")).toString ()).toEqual ("0.0000000000000000000000000000000001");
+
+    expect (JSBD.divideSignif3 (JSBD.BigD ("0.0000000000000000000000000000000000000001"), JSBD.BigD ("0.0000000000000000000000000000000000000001")).toString ()).toEqual ("1");
+
+    expect (JSBD.divideSignif3 (JSBD.BigD ("1"), JSBD.BigD ("696969696969696969696969696969696969")).toString ()).toEqual ("0.00000000000000000000000000000000000143478260869565217391304347826087");
+
+    //                                                         1 with 35 zeros
+    expect (JSBD.divideSignif3 (JSBD.BigD ("1"), JSBD.BigD ("100000000000000000000000000000000000")).toString ()).toEqual ("0.00000000000000000000000000000000001");
+    //                                              34
+    expect (JSBD.divideSignif3 (JSBD.BigD ("0.0000000000000000000000000000000001"), JSBD.BigD ("1")).toString ()).toEqual ("0.0000000000000000000000000000000001");
+    //                                              35
+    expect (JSBD.divideSignif3 (JSBD.BigD ("0.00000000000000000000000000000000001"), JSBD.BigD ("1")).toString ()).toEqual ("0.00000000000000000000000000000000001");
+
+    expect (JSBD.divideSignif3 (JSBD.BigD ("1"), JSBD.BigD ("33333333")).toString ()).toEqual ("0.0000000300000003000000030000000300000003");
+    expect (JSBD.divideSignif3 (JSBD.BigD ("100000000000000000000"), JSBD.BigD ("33333333")).toString ()).toEqual ("3000000030000.0003000000030000000300000003");
+
+    //                                      0 zeros
+    expect (JSBD.divideSignif3 (JSBD.BigD ("1"), JSBD.BigD ("3")).toString ()).toEqual ("0.3333333333333333333333333333333333");
+    //                                      1 zero
+    expect (JSBD.divideSignif3 (JSBD.BigD ("10"), JSBD.BigD ("3")).toString ()).toEqual ("3.3333333333333333333333333333333333");
+    //                                      2 zeros
+    expect (JSBD.divideSignif3 (JSBD.BigD ("100"), JSBD.BigD ("3")).toString ()).toEqual ("33.3333333333333333333333333333333333");
+    //                                      10 zeros
+    expect (JSBD.divideSignif3 (JSBD.BigD ("10000000000"), JSBD.BigD ("3")).toString ()).toEqual ("3333333333.3333333333333333333333333333333333");
+    //                                      20 zeros
+    expect (JSBD.divideSignif3 (JSBD.BigD ("100000000000000000000"), JSBD.BigD ("3")).toString ()).toEqual ("33333333333333333333.3333333333333333333333333333333333");
+    //                                      30 zeros
+    expect (JSBD.divideSignif3 (JSBD.BigD ("1000000000000000000000000000000"), JSBD.BigD ("3")).toString ()).toEqual ("333333333333333333333333333333.3333333333333333333333333333333333");
+    //                                      34 zeros
+    expect (JSBD.divideSignif3 (JSBD.BigD ("10000000000000000000000000000000000"), JSBD.BigD ("3")).toString ()).toEqual ("3333333333333333333333333333333333.3333333333333333333333333333333333");
+    //                                      39 zeros
+    expect (JSBD.divideSignif3 (JSBD.BigD ("1000000000000000000000000000000000000000"), JSBD.BigD ("3")).toString ()).toEqual ("333333333333333333333333333333333333333.3333333333333333333333333333333333");
+
+    //                                      0 zeros
+    expect (JSBD.divideSignif3 (JSBD.BigD ("1"), JSBD.BigD ("6")).toString ()).toEqual ("0.1666666666666666666666666666666667");
+    //                                      1 zero
+    expect (JSBD.divideSignif3 (JSBD.BigD ("10"), JSBD.BigD ("6")).toString ()).toEqual ("1.6666666666666666666666666666666667");
+    //                                      2 zeros
+    expect (JSBD.divideSignif3 (JSBD.BigD ("100"), JSBD.BigD ("6")).toString ()).toEqual ("16.6666666666666666666666666666666667");
+    //                                      10 zeros
+    expect (JSBD.divideSignif3 (JSBD.BigD ("10000000000"), JSBD.BigD ("6")).toString ()).toEqual ("1666666666.6666666666666666666666666666666667");
+    //                                      20 zeros
+    expect (JSBD.divideSignif3 (JSBD.BigD ("100000000000000000000"), JSBD.BigD ("6")).toString ()).toEqual ("16666666666666666666.6666666666666666666666666666666667");
+    //                                      30 zeros
+    expect (JSBD.divideSignif3 (JSBD.BigD ("1000000000000000000000000000000"), JSBD.BigD ("6")).toString ()).toEqual ("166666666666666666666666666666.6666666666666666666666666666666667");
+    //                                      34 zeros
+    expect (JSBD.divideSignif3 (JSBD.BigD ("10000000000000000000000000000000000"), JSBD.BigD ("6")).toString ()).toEqual ("1666666666666666666666666666666666.6666666666666666666666666666666667");
+    //                                      39 zeros
+    expect (JSBD.divideSignif3 (JSBD.BigD ("1000000000000000000000000000000000000000"), JSBD.BigD ("6")).toString ()).toEqual ("166666666666666666666666666666666666666.6666666666666666666666666666666667");
+
+    expect (JSBD.divideSignif3 (JSBD.BigD ("999999999999999999999999.0696753743"), JSBD.BigD ("999999999999999999999998.0468364135")).toString ()).toEqual ("1.0000000000000000000000010228389608");
+}
+
+//#######################################################
+//############# / DIVIDE DIFFERENCES / ##################
+//#######################################################
+//############# let num = 1.23m / 1.23m #################
+{
+    expect (JSBD.divide        (JSBD.BigD ("1"), JSBD.BigD ("696969696969696969696969696969696969")).toString ()).toEqual ("0");
+    expect (JSBD.divideSignif1 (JSBD.BigD ("1"), JSBD.BigD ("696969696969696969696969696969696969")).toString ()).toEqual ("0.00000000000000000000000000000000000143478260869565217391304347826087");
+    expect (JSBD.divideSignif2 (JSBD.BigD ("1"), JSBD.BigD ("696969696969696969696969696969696969")).toString ()).toEqual ("0.00000000000000000000000000000000000143478260869565217391304347826087");
+    expect (JSBD.divideSignif3 (JSBD.BigD ("1"), JSBD.BigD ("696969696969696969696969696969696969")).toString ()).toEqual ("0.00000000000000000000000000000000000143478260869565217391304347826087");
+
+    expect (JSBD.divide        (JSBD.BigD ("1"), JSBD.BigD ("100000000000000000000000000000000000")).toString ()).toEqual ("0");
+    expect (JSBD.divideSignif1 (JSBD.BigD ("1"), JSBD.BigD ("100000000000000000000000000000000000")).toString ()).toEqual ("0.00000000000000000000000000000000001");
+    expect (JSBD.divideSignif2 (JSBD.BigD ("1"), JSBD.BigD ("100000000000000000000000000000000000")).toString ()).toEqual ("0.00000000000000000000000000000000001");
+    expect (JSBD.divideSignif3 (JSBD.BigD ("1"), JSBD.BigD ("100000000000000000000000000000000000")).toString ()).toEqual ("0.00000000000000000000000000000000001");
+
+    expect (JSBD.divide        (JSBD.BigD ("1000000000000000000000000000000000000000"), JSBD.BigD ("3")).toString ()).toEqual ("333333333333333333333333333333333333333.3333333333333333333333333333333333");
+    expect (JSBD.divideSignif1 (JSBD.BigD ("1000000000000000000000000000000000000000"), JSBD.BigD ("3")).toString ()).toEqual ("333333333333333333333333333333333333333");
+    expect (JSBD.divideSignif2 (JSBD.BigD ("1000000000000000000000000000000000000000"), JSBD.BigD ("3")).toString ()).toEqual ("333333333333333333333333333333333300000");
+    expect (JSBD.divideSignif3 (JSBD.BigD ("1000000000000000000000000000000000000000"), JSBD.BigD ("3")).toString ()).toEqual ("333333333333333333333333333333333333333.3333333333333333333333333333333333");
+
+    expect (JSBD.divide        (JSBD.BigD ("1"), JSBD.BigD ("33333333")).toString ()).toEqual ("0.00000003000000030000000300000003");
+    expect (JSBD.divideSignif1 (JSBD.BigD ("1"), JSBD.BigD ("33333333")).toString ()).toEqual ("0.0000000300000003000000030000000300000003");
+    expect (JSBD.divideSignif2 (JSBD.BigD ("1"), JSBD.BigD ("33333333")).toString ()).toEqual ("0.0000000300000003000000030000000300000003");
+    expect (JSBD.divideSignif3 (JSBD.BigD ("1"), JSBD.BigD ("33333333")).toString ()).toEqual ("0.0000000300000003000000030000000300000003");
+
+    expect (JSBD.divide        (JSBD.BigD ("100000000000000000000"), JSBD.BigD ("33333333")).toString ()).toEqual ("3000000030000.0003000000030000000300000003");
+    expect (JSBD.divideSignif1 (JSBD.BigD ("100000000000000000000"), JSBD.BigD ("33333333")).toString ()).toEqual ("3000000030000.00030000000300000003");
+    expect (JSBD.divideSignif2 (JSBD.BigD ("100000000000000000000"), JSBD.BigD ("33333333")).toString ()).toEqual ("3000000030000.00030000000300000003");
+    expect (JSBD.divideSignif3 (JSBD.BigD ("100000000000000000000"), JSBD.BigD ("33333333")).toString ()).toEqual ("3000000030000.0003000000030000000300000003");
+}
 
 //#######################################################
 //################# ** EXPONENTIATE ** ##################
