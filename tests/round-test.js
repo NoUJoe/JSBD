@@ -1786,6 +1786,8 @@ let expect = function (value)
     expect (JSBD.round (JSBD.BigD ("69.6969"), {roundingMode: "trunc", maximumFractionDigits: 5}).toString ()).toEqual ("69.6969");
     expect (JSBD.round (JSBD.BigD ("69.6969"), {roundingMode: "trunc", maximumFractionDigits: 69}).toString ()).toEqual ("69.6969");
 
+    expect (JSBD.round (JSBD.BigD ("69.000006969"), {roundingMode: "trunc", maximumFractionDigits: 4}).toString ()).toEqual ("69");
+
     //Increment 2
     expect (JSBD.round (JSBD.BigD ("69.6969"), {roundingMode: "trunc", roundingIncrement: 2}).toString ()).toEqual ("69.6968");
     expect (JSBD.round (JSBD.BigD ("69.6969"), {roundingMode: "trunc", maximumFractionDigits: 4, roundingIncrement: 2}).toString ()).toEqual ("69.6968");
