@@ -569,6 +569,8 @@ export default class JSBD
 
                 maxFractionDigits -= i - stripped.length;
 
+                if (stripped === "-0") stripped = "0";
+
                 return JSBD.#Make (stripped, maxFractionDigits);
             }
         }
