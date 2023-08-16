@@ -565,7 +565,11 @@ export default class JSBD
             {
                 let i = strVal.length - (decPlaces - maxFractionDigits);
 
-                return JSBD.#Make (JSBD.#StripTrailingZeros (strVal.substring (0, i), maxFractionDigits), maxFractionDigits);
+                let stripped = JSBD.#StripTrailingZeros (strVal.substring (0, i), maxFractionDigits);
+
+                maxFractionDigits -= i - stripped.length;
+
+                return JSBD.#Make (stripped, maxFractionDigits);
             }
         }
         
