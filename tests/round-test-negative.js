@@ -1539,6 +1539,19 @@ let expect = function (value)
 
     expect (JSBD.round (JSBD.BigD ("-69.000006969"), {roundingMode: "trunc", maximumFractionDigits: 4}).toString ()).toEqual ("-69");
 
+    expect (JSBD.round (JSBD.BigD ("-69.000006969"), {roundingMode: "trunc", maximumFractionDigits: 4, precisionMode: "significantFullInt"}).toString ()).toEqual ("-69");
+    expect (JSBD.round (JSBD.BigD ("-69.000006969"), {roundingMode: "trunc", maximumFractionDigits: 2, precisionMode: "significantFullInt"}).toString ()).toEqual ("-69");
+    expect (JSBD.round (JSBD.BigD ("-69.000006969"), {roundingMode: "trunc", maximumFractionDigits: 1, precisionMode: "significantFullInt"}).toString ()).toEqual ("-69");
+    expect (JSBD.round (JSBD.BigD ("-69.000006969"), {roundingMode: "trunc", maximumFractionDigits: 0, precisionMode: "significantFullInt"}).toString ()).toEqual ("-69");
+
+    expect (JSBD.round (JSBD.BigD ("-69.000006969"), {roundingMode: "trunc", maximumFractionDigits: 2, precisionMode: "significant"}).toString ()).toEqual ("-69");
+    expect (JSBD.round (JSBD.BigD ("-69.000006969"), {roundingMode: "trunc", maximumFractionDigits: 1, precisionMode: "significant"}).toString ()).toEqual ("-60");
+    expect (JSBD.round (JSBD.BigD ("-69.000006969"), {roundingMode: "trunc", maximumFractionDigits: 0, precisionMode: "significant"}).toString ()).toEqual ("0");
+
+    expect (JSBD.round (JSBD.BigD ("-0.69"), {roundingMode: "trunc", maximumFractionDigits: 0, precisionMode: "significant"}).toString ()).toEqual ("0");
+    expect (JSBD.round (JSBD.BigD ("-0.69"), {roundingMode: "trunc", maximumFractionDigits: 1, precisionMode: "significant"}).toString ()).toEqual ("-0.6");
+
+
     //Increment 2
     expect (JSBD.round (JSBD.BigD ("-69.6969"), {roundingMode: "trunc", roundingIncrement: 2}).toString ()).toEqual ("-69.6968");
     expect (JSBD.round (JSBD.BigD ("-69.6969"), {roundingMode: "trunc", maximumFractionDigits: 4, roundingIncrement: 2}).toString ()).toEqual ("-69.6968");

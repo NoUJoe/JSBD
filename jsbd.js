@@ -507,7 +507,7 @@ export default class JSBD
             case "significantFlex":
             {
                 let strVal = val.#strVal;
-                let intDigitCount = strVal - val.#decPlaces;
+                let intDigitCount = strVal.length - val.#decPlaces;
                 let isNegative = strVal[0] === "-";
                 let firstDigitI;
                 if (isNegative)
@@ -543,7 +543,7 @@ export default class JSBD
             }
         }
 
-        return JSBD.#DoRound (val.#strVal, val.#decPlaces, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
+        return JSBD.#DoRound (val.#strVal, val.#decPlaces, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup, this.#cachedRoundOpts.precisionMode, expFromMostSignificant);
     }
 
     static #internalRound (strVal, decPlaces, opts, expFromMostSignificant)
@@ -654,6 +654,10 @@ export default class JSBD
             }
         }
 
+        let isNegative = strVal.codePointAt (0) === 45;
+
+        let firstNumIndex = isNegative ? 1 : 0;
+
         if (roundingMode === "trunc" && roundIncrSetup.incrVal === 1n)
         {
             if (maxFractionDigits >= decPlaces) return JSBD.#Make (strVal, decPlaces);
@@ -663,7 +667,9 @@ export default class JSBD
 
                 if (maxFractionDigits < 0)
                 {
-                    let str = strVal.substring (0, i);
+                    if (i <= firstNumIndex) return JSBD.#ZERO;
+
+                    let str = strVal.substring (0, i) + "0".repeat (-maxFractionDigits);
                     //if (str === "-0") str = "0"; //shouldn't need cos int part should never be 0 or -0 when maxFractionDigits < 0
 
                     return JSBD.#Make (str, 0);
@@ -678,10 +684,6 @@ export default class JSBD
                 return JSBD.#Make (stripped, maxFractionDigits);
             }
         }
-        
-        let isNegative = strVal.codePointAt (0) === 45;
-
-        let firstNumIndex = isNegative ? 1 : 0;
 
         let incrVal = roundIncrSetup.incrVal, halfIncrVal = roundIncrSetup.halfIncrVal, incrDigitCount = roundIncrSetup.incrDigitCount,
         halfIncrDigitCount = roundIncrSetup.halfIncrDigitCount, shiftRightBy = roundIncrSetup.shiftRightBy;
@@ -2980,4 +2982,4 @@ export default class JSBD
     static {
         JSBD.#staticConstructor ();
     }
-}JSBD.round (JSBD.BigD ("69.1230000005"), {roundingMode: "halfExpand", maximumFractionDigits: 3})
+}
