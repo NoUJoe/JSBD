@@ -282,6 +282,8 @@ let expect = function (value)
 //#################### HALF EXPAND ############################################
 //#############################################################################
 {
+    expect (JSBD.round (JSBD.BigD ("69.1230000005"), {roundingMode: "halfExpand", maximumFractionDigits: 3}).toString ()).toEqual ("69.123");
+
     //Increment 1
     expect (JSBD.round (JSBD.BigD ("69.6969")).toString ()).toEqual ("69.6969");
     expect (JSBD.round (JSBD.BigD ("69.6969"), {roundingMode: "halfExpand"}).toString ()).toEqual ("69.6969");

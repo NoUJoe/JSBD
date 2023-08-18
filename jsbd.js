@@ -7,6 +7,8 @@ export default class JSBD
     //and made an executive decision
     static #roundModeSet = new Set (["trunc", "expand", "floor", "ceil", "halfTrunc", "halfExpand", "halfFloor", "halfCeil", "halfEven"]);
 
+    static #precisionModeSet = new Set (["fractional", "significant", "significantFullInt", "significantFlex"]);
+
     static #roundHalfIncrMapByIncrement = new Map ([
         [1, {incrVal: 1n, halfIncrVal: "5", incrDigitCount: 1, halfIncrDigitCount: 1, shiftRightBy: 1}],
         [2, {incrVal: 2n, halfIncrVal: "1", incrDigitCount: 1, halfIncrDigitCount: 1, shiftRightBy: 0}],
@@ -28,21 +30,24 @@ export default class JSBD
     static #defaultGenericRoundOpts = {
         maximumFractionDigits: undefined,   //This is handled slightly differently which is why its undefined
         roundingMode: "halfExpand",
-        roundingIncrement: 1
+        roundingIncrement: 1,
+        precisionMode: "fractional"
     }
 
     static #divDefaultRoundOpts = {
         maximumFractionDigits: 34,
         roundingMode: "halfExpand",
         roundingIncrement: 1,
-        incrSetup: JSBD.#roundHalfIncrMapByIncrement.get (1)
+        incrSetup: JSBD.#roundHalfIncrMapByIncrement.get (1),
+        precisionMode: "fractional"
     };
 
     static #cachedRoundOpts = {
         maximumFractionDigits: 0,
         roundingMode: "",
         roundingIncrement: 0,
-        incrSetup: null
+        incrSetup: null,
+        precisionMode: "fractional"
     };
 
     static #ZERO;
@@ -489,23 +494,70 @@ export default class JSBD
         if (opts.maximumFractionDigits !== undefined) this.#cachedRoundOpts.maximumFractionDigits = opts.maximumFractionDigits;
         if (opts.roundingMode !== undefined) this.#cachedRoundOpts.roundingMode = opts.roundingMode;
         if (opts.roundingIncrement !== undefined) this.#cachedRoundOpts.roundingIncrement = opts.roundingIncrement;
+        if (opts.precisionMode !== undefined) this.#cachedRoundOpts.precisionMode = opts.precisionMode;
 
         JSBD.#ValidateAndSanitiseRoundOpts (val.#decPlaces, this.#cachedRoundOpts);
+
+        let expFromMostSignificant;
+
+        switch (this.#cachedRoundOpts.precisionMode)
+        {
+            case "significant":
+            case "significantFullInt":
+            case "significantFlex":
+            {
+                let strVal = val.#strVal;
+                let intDigitCount = strVal - val.#decPlaces;
+                let isNegative = strVal[0] === "-";
+                let firstDigitI;
+                if (isNegative)
+                {
+                    firstDigitI = 1;
+                    intDigitCount--;
+                }
+                else
+                {
+                    firstDigitI = 0;
+                }
+
+                if (intDigitCount > 1 || strVal[firstDigitI] !== "0")
+                {
+                    expFromMostSignificant = intDigitCount;
+                }
+                else
+                {
+                    expFromMostSignificant = 0;
+                    let startI = firstDigitI + 1;
+
+                    for (let i = startI; i < strVal.length; i++)
+                    {
+                        if (strVal.codePointAt (i) !== 48)
+                        {
+                            expFromMostSignificant = i - startI;
+                            break;
+                        }
+                    }
+                }
+
+                break;
+            }
+        }
 
         return JSBD.#DoRound (val.#strVal, val.#decPlaces, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
     }
 
-    static #internalRound (strVal, decPlaces, opts)
+    static #internalRound (strVal, decPlaces, opts, expFromMostSignificant)
     {
         Object.assign (this.#cachedRoundOpts, this.#defaultGenericRoundOpts);
 
         if (opts.maximumFractionDigits !== undefined) this.#cachedRoundOpts.maximumFractionDigits = opts.maximumFractionDigits;
         if (opts.roundingMode !== undefined) this.#cachedRoundOpts.roundingMode = opts.roundingMode;
         if (opts.roundingIncrement !== undefined) this.#cachedRoundOpts.roundingIncrement = opts.roundingIncrement;
+        if (opts.precisionMode !== undefined) this.#cachedRoundOpts.precisionMode = opts.precisionMode;
 
         JSBD.#ValidateAndSanitiseRoundOpts (decPlaces, this.#cachedRoundOpts);
 
-        return JSBD.#DoRound (strVal, decPlaces, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
+        return JSBD.#DoRound (strVal, decPlaces, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup, this.#cachedRoundOpts.precisionMode, expFromMostSignificant);
     }
 
     static #ValidateAndSanitiseRoundOpts (decPlaces, opts)
@@ -525,8 +577,9 @@ export default class JSBD
 
         let roundingIncrement = opts.roundingIncrement;
 
-        if (roundingIncrement === undefined) roundingIncrement = 1;
-        else if (typeof roundingIncrement === "bigint") throw new TypeError ("Cannot convert a BigInt value to a number");
+        // if (roundingIncrement === undefined) roundingIncrement = 1;
+        // else 
+        if (typeof roundingIncrement === "bigint") throw new TypeError ("Cannot convert a BigInt value to a number");
         else roundingIncrement = +roundingIncrement;
         
         if (isNaN (roundingIncrement) || !isFinite (roundingIncrement))
@@ -540,30 +593,81 @@ export default class JSBD
 
         if (incrSetup === undefined) throw new RangeError ("roundingIncrement value is out of range");
 
-        let roundingMode = opts.roundingMode;
+        //implicitly casts, toString () and String () are too explicit and don't behave like JS does internally
+        let roundingMode = `${opts.roundingMode}`;
 
-        if (roundingMode === undefined) roundingMode = "halfExpand";
-        else 
-        {
-            roundingMode = `${roundingMode}`;
-        }
+        // if (roundingMode === undefined) roundingMode = "halfExpand";
+        // else 
+        // {
+            //roundingMode = `${roundingMode}`;
+        //}
         
         if (!JSBD.#roundModeSet.has (roundingMode)) throw new RangeError (`roundingMode ${roundingMode} is out of range`);
+
+        let precisionMode = `${opts.precisionMode}`;
+
+        if (!JSBD.#precisionModeSet.has (precisionMode)) throw new RangeError (`precisionMode ${precisionMode} is out of range`);
 
         opts.maximumFractionDigits = maxFractionDigits;
         opts.roundingMode = roundingMode;
         opts.roundingIncrement = roundingIncrement;
         opts.incrSetup = incrSetup;
+        opts.precisionMode = precisionMode;
     }
 
-    static #DoRound (strVal, decPlaces, maxFractionDigits, roundingMode, roundIncrSetup)
+    static #DoRound (strVal, decPlaces, maxFractionDigits, roundingMode, roundIncrSetup, precisionMode, expFromMostSignificant)
     {
+        switch (precisionMode)
+        {
+            case "significant":
+            {
+                if (expFromMostSignificant < 0)
+                {
+                    maxFractionDigits += -expFromMostSignificant;
+                }
+                else
+                {
+                    maxFractionDigits -= expFromMostSignificant;
+                }
+                break;
+            }
+            case "significantFullInt":
+            { 
+                if (expFromMostSignificant < 0)
+                {
+                    maxFractionDigits += -expFromMostSignificant;
+                }
+                else
+                {
+                    maxFractionDigits -= expFromMostSignificant;
+                    if (maxFractionDigits < 0) maxFractionDigits = 0;
+                }
+                break;
+            }
+            case "significantFlex":
+            {
+                if (expFromMostSignificant < 0)
+                {
+                    maxFractionDigits += -expFromMostSignificant;
+                }
+                break;
+            }
+        }
+
         if (roundingMode === "trunc" && roundIncrSetup.incrVal === 1n)
         {
             if (maxFractionDigits >= decPlaces) return JSBD.#Make (strVal, decPlaces);
             else
             {
                 let i = strVal.length - (decPlaces - maxFractionDigits);
+
+                if (maxFractionDigits < 0)
+                {
+                    let str = strVal.substring (0, i);
+                    //if (str === "-0") str = "0"; //shouldn't need cos int part should never be 0 or -0 when maxFractionDigits < 0
+
+                    return JSBD.#Make (str, 0);
+                }
 
                 let stripped = JSBD.#StripTrailingZeros (strVal.substring (0, i), maxFractionDigits);
 
@@ -614,7 +718,7 @@ export default class JSBD
         // (3100001 / 1000000) % 2 = 1
         // (3100001 / 2500000) % 2 = 1
 
-        let outputNumEndIndexInStrVal = (strVal.length + additionalDecimalPlaces) - (decPlaces + additionalDecimalPlaces) + (maxFractionDigits) - 1;
+        let outputNumEndIndexInStrVal = (strVal.length) - (decPlaces - maxFractionDigits) - 1;
 
         let outputNumEndIndexPOne = outputNumEndIndexInStrVal + 1;
         let roundBasisStartIndex = outputNumEndIndexInStrVal - (incrDigitCount - 1) + shiftRightBy;
@@ -942,7 +1046,11 @@ export default class JSBD
         //
         //Construct resulting big decimal
         //
-        if (newLastDigit % 10n === 0n)
+        if (maxFractionDigits < 0)
+        {
+            return JSBD.#Make (newLastDigitStr + "0".repeat (-maxFractionDigits), 0);
+        }
+        else if (newLastDigit % 10n === 0n)
         {
             let newStr = JSBD.#StripTrailingZeros (newLastDigitStr, maxFractionDigits);
             let newDecCount = maxFractionDigits - (newLastDigitStr.length - newStr.length);
@@ -1017,7 +1125,7 @@ export default class JSBD
 
             if (typeof roundOpts === "object")
             {
-                return JSBD.#internalRound (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces, roundOpts);
+                return JSBD.#internalRound (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces, roundOpts, -diff);
             }
 
             return JSBD.#Make (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces);
@@ -1026,7 +1134,9 @@ export default class JSBD
         {
             if (typeof roundOpts === "object")
             {
-                return JSBD.#internalRound (signStr + addedAbsAsStr, resultDecPlaces, roundOpts);
+                let diff = resultDecPlaces - postAbsLength;
+
+                return JSBD.#internalRound (signStr + addedAbsAsStr, resultDecPlaces, roundOpts, diff);
             }
             
             return JSBD.#Make (signStr + addedAbsAsStr, resultDecPlaces);
@@ -1089,7 +1199,7 @@ export default class JSBD
 
             if (typeof roundOpts === "object")
             {
-                return JSBD.#internalRound (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces, roundOpts);
+                return JSBD.#internalRound (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces, roundOpts, -diff);
             }
 
             return JSBD.#Make (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces);
@@ -1098,7 +1208,9 @@ export default class JSBD
         {
             if (typeof roundOpts === "object")
             {
-                return JSBD.#internalRound (signStr + addedAbsAsStr, resultDecPlaces, roundOpts);
+                let diff = resultDecPlaces - postAbsLength;
+
+                return JSBD.#internalRound (signStr + addedAbsAsStr, resultDecPlaces, roundOpts, diff);
             }
 
             return JSBD.#Make (signStr + addedAbsAsStr, resultDecPlaces);
@@ -1145,7 +1257,7 @@ export default class JSBD
 
             if (typeof roundOpts === "object")
             {
-                return JSBD.#internalRound (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces, roundOpts);
+                return JSBD.#internalRound (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces, roundOpts, -diff);
             }
 
             return JSBD.#Make (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces);
@@ -1154,7 +1266,9 @@ export default class JSBD
         {
             if (typeof roundOpts === "object")
             {
-                return JSBD.#internalRound (signStr + addedAbsAsStr, resultDecPlaces, roundOpts);
+                let diff = resultDecPlaces - postAbsLength;
+
+                return JSBD.#internalRound (signStr + addedAbsAsStr, resultDecPlaces, roundOpts, diff);
             }
 
             return JSBD.#Make (signStr + addedAbsAsStr, resultDecPlaces);
@@ -1180,6 +1294,7 @@ export default class JSBD
             if (roundOpts.maximumFractionDigits !== undefined) this.#cachedRoundOpts.maximumFractionDigits = roundOpts.maximumFractionDigits;
             if (roundOpts.roundingMode !== undefined) this.#cachedRoundOpts.roundingMode = roundOpts.roundingMode;
             if (roundOpts.roundingIncrement !== undefined) this.#cachedRoundOpts.roundingIncrement = roundOpts.roundingIncrement;
+            if (roundOpts.precisionMode !== undefined) this.#cachedRoundOpts.precisionMode = roundOpts.precisionMode;
 
             JSBD.#ValidateAndSanitiseRoundOpts (this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts);
 
@@ -1187,7 +1302,6 @@ export default class JSBD
         }
         else
         {
-            //JSBD.#ValidateAndSanitiseRoundOpts (this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts);
             maxFractionDigits = this.#cachedRoundOpts.maximumFractionDigits + 1;
         }
 
@@ -1245,312 +1359,15 @@ export default class JSBD
 
         zeroCount -= preAbsLength - postAbsLength;
         
-        if (postAbsLength <= zeroCount)
-        {
-            let diff = zeroCount - postAbsLength;
+        let diff = postAbsLength - zeroCount;
 
-            return JSBD.#DoRound (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, zeroCount, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
+        if (diff <= 0)
+        {
+            return JSBD.#DoRound (`${signStr}${"0".repeat (-diff + 1)}${addedAbsAsStr}`, zeroCount, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup, this.#cachedRoundOpts.precisionMode, diff);
         }
         else
         {
-            return JSBD.#DoRound (signStr + addedAbsAsStr, zeroCount, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
-        }
-    }
-
-    static divideSignif1 (lhs, rhs, roundOpts = undefined)
-    {
-        let strAsInt, str2AsInt;
-
-        let dDiff = lhs.#decPlaces - rhs.#decPlaces;
-
-        let rhsStr = rhs.#strVal;
-        let lhsStr = lhs.#strVal;
-
-        let zeroCount;
-        let maxFractionDigits;
-
-        Object.assign (this.#cachedRoundOpts, this.#divDefaultRoundOpts);
-
-        if (typeof roundOpts === "object")
-        {
-            if (roundOpts.maximumFractionDigits !== undefined) this.#cachedRoundOpts.maximumFractionDigits = roundOpts.maximumFractionDigits;
-            if (roundOpts.roundingMode !== undefined) this.#cachedRoundOpts.roundingMode = roundOpts.roundingMode;
-            if (roundOpts.roundingIncrement !== undefined) this.#cachedRoundOpts.roundingIncrement = roundOpts.roundingIncrement;
-
-            JSBD.#ValidateAndSanitiseRoundOpts (this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts);
-
-            maxFractionDigits = this.#cachedRoundOpts.maximumFractionDigits + 1;
-        }
-        else
-        {
-            //JSBD.#ValidateAndSanitiseRoundOpts (this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts);
-            maxFractionDigits = this.#cachedRoundOpts.maximumFractionDigits + 1;
-        }
-
-        if (dDiff > 0)
-        {
-            let rhsLen = rhsStr.length + -dDiff;
-            if (rhsStr[0] === "-") rhsLen -= 1;
-
-            let lhsLen = lhsStr[0] === "-" ? lhsStr.length - 1 : lhsStr.length;
-
-            zeroCount = lhsLen > rhsLen ? lhsLen - rhsLen + maxFractionDigits : maxFractionDigits;
-
-            strAsInt = BigInt (lhsStr + "0".repeat (zeroCount));
-            str2AsInt = BigInt (`${rhsStr}${"0".repeat (dDiff)}`);
-        }
-        else
-        {
-            let lhsLen = lhsStr.length + -dDiff;
-            if (lhsStr[0] === "-") lhsLen -= 1;
-
-            let rhsLen = rhsStr[0] === "-" ? rhsStr.length - 1 : rhsStr.length;
-
-            zeroCount = rhsLen > lhsLen ? rhsLen - lhsLen + maxFractionDigits : maxFractionDigits;
-
-            strAsInt = BigInt (`${lhsStr}${"0".repeat (-dDiff + zeroCount)}`);
-            str2AsInt = BigInt (rhsStr);
-        }
-
-        if (str2AsInt === 0n) throw new RangeError ("Division by zero");
-        
-        let added = strAsInt / str2AsInt;
-
-        let addedAbsAsStr;
-        let preAbsLength;
-        let postAbsLength;
-        let signStr;
-
-        if (added < 0n)
-        {
-            addedAbsAsStr = (-added).toString ();
-            preAbsLength = addedAbsAsStr.length;
-            signStr = "-";
-        }
-        else
-        {
-            addedAbsAsStr = added.toString ();
-            preAbsLength = addedAbsAsStr.length;
-            signStr = "";
-        }
-        
-        addedAbsAsStr = JSBD.#StripTrailingZeros (addedAbsAsStr, zeroCount);
-        postAbsLength = addedAbsAsStr.length;
-
-        if (postAbsLength === 0) return JSBD.#ZERO;
-
-        zeroCount -= preAbsLength - postAbsLength;
-        
-        if (postAbsLength <= zeroCount)
-        {
-            let diff = zeroCount - postAbsLength;
-
-            return JSBD.#DoRound (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, zeroCount, this.#cachedRoundOpts.maximumFractionDigits + diff, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
-        }
-        else 
-        {
-            let newMaxFractionDigits = this.#cachedRoundOpts.maximumFractionDigits - (postAbsLength - zeroCount)
-            if (newMaxFractionDigits < 0) newMaxFractionDigits = 0;
-
-            return JSBD.#DoRound (signStr + addedAbsAsStr, zeroCount, newMaxFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
-        }
-    }
-
-    static divideSignif2 (lhs, rhs, roundOpts = undefined)
-    {
-        let strAsInt, str2AsInt;
-
-        let dDiff = lhs.#decPlaces - rhs.#decPlaces;
-
-        let rhsStr = rhs.#strVal;
-        let lhsStr = lhs.#strVal;
-
-        let zeroCount;
-        let maxFractionDigits;
-
-        Object.assign (this.#cachedRoundOpts, this.#divDefaultRoundOpts);
-
-        if (typeof roundOpts === "object")
-        {
-            if (roundOpts.maximumFractionDigits !== undefined) this.#cachedRoundOpts.maximumFractionDigits = roundOpts.maximumFractionDigits;
-            if (roundOpts.roundingMode !== undefined) this.#cachedRoundOpts.roundingMode = roundOpts.roundingMode;
-            if (roundOpts.roundingIncrement !== undefined) this.#cachedRoundOpts.roundingIncrement = roundOpts.roundingIncrement;
-
-            JSBD.#ValidateAndSanitiseRoundOpts (this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts);
-
-            maxFractionDigits = this.#cachedRoundOpts.maximumFractionDigits + 1;
-        }
-        else
-        {
-            //JSBD.#ValidateAndSanitiseRoundOpts (this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts);
-            maxFractionDigits = this.#cachedRoundOpts.maximumFractionDigits + 1;
-        }
-
-        if (dDiff > 0)
-        {
-            let rhsLen = rhsStr.length + -dDiff;
-            if (rhsStr[0] === "-") rhsLen -= 1;
-
-            let lhsLen = lhsStr[0] === "-" ? lhsStr.length - 1 : lhsStr.length;
-
-            zeroCount = lhsLen > rhsLen ? lhsLen - rhsLen + maxFractionDigits : maxFractionDigits;
-
-            strAsInt = BigInt (lhsStr + "0".repeat (zeroCount));
-            str2AsInt = BigInt (`${rhsStr}${"0".repeat (dDiff)}`);
-        }
-        else
-        {
-            let lhsLen = lhsStr.length + -dDiff;
-            if (lhsStr[0] === "-") lhsLen -= 1;
-
-            let rhsLen = rhsStr[0] === "-" ? rhsStr.length - 1 : rhsStr.length;
-
-            zeroCount = rhsLen > lhsLen ? rhsLen - lhsLen + maxFractionDigits : maxFractionDigits;
-
-            strAsInt = BigInt (`${lhsStr}${"0".repeat (-dDiff + zeroCount)}`);
-            str2AsInt = BigInt (rhsStr);
-        }
-
-        if (str2AsInt === 0n) throw new RangeError ("Division by zero");
-        
-        let added = strAsInt / str2AsInt;
-
-        let addedAbsAsStr;
-        let preAbsLength;
-        let postAbsLength;
-        let signStr;
-
-        if (added < 0n)
-        {
-            addedAbsAsStr = (-added).toString ();
-            preAbsLength = addedAbsAsStr.length;
-            signStr = "-";
-        }
-        else
-        {
-            addedAbsAsStr = added.toString ();
-            preAbsLength = addedAbsAsStr.length;
-            signStr = "";
-        }
-        
-        addedAbsAsStr = JSBD.#StripTrailingZeros (addedAbsAsStr, zeroCount);
-        postAbsLength = addedAbsAsStr.length;
-
-        if (postAbsLength === 0) return JSBD.#ZERO;
-
-        zeroCount -= preAbsLength - postAbsLength;
-        
-        if (postAbsLength <= zeroCount)
-        {
-            let diff = zeroCount - postAbsLength;
-
-            return JSBD.#DoRound (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, zeroCount, this.#cachedRoundOpts.maximumFractionDigits + diff, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
-        }
-        else 
-        {
-            let newMaxFractionDigits = this.#cachedRoundOpts.maximumFractionDigits - (postAbsLength - zeroCount)
-            if (newMaxFractionDigits < 0)
-            {
-                return JSBD.#Make (addedAbsAsStr.substring (0, this.#cachedRoundOpts.maximumFractionDigits) + "0".repeat (-newMaxFractionDigits), 0);
-            }
-
-            return JSBD.#DoRound (signStr + addedAbsAsStr, zeroCount, newMaxFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
-        }
-    }
-
-    static divideSignif3 (lhs, rhs, roundOpts = undefined)
-    {
-        let strAsInt, str2AsInt;
-
-        let dDiff = lhs.#decPlaces - rhs.#decPlaces;
-
-        let rhsStr = rhs.#strVal;
-        let lhsStr = lhs.#strVal;
-
-        let zeroCount;
-        let maxFractionDigits;
-
-        Object.assign (this.#cachedRoundOpts, this.#divDefaultRoundOpts);
-
-        if (typeof roundOpts === "object")
-        {
-            if (roundOpts.maximumFractionDigits !== undefined) this.#cachedRoundOpts.maximumFractionDigits = roundOpts.maximumFractionDigits;
-            if (roundOpts.roundingMode !== undefined) this.#cachedRoundOpts.roundingMode = roundOpts.roundingMode;
-            if (roundOpts.roundingIncrement !== undefined) this.#cachedRoundOpts.roundingIncrement = roundOpts.roundingIncrement;
-
-            JSBD.#ValidateAndSanitiseRoundOpts (this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts);
-
-            maxFractionDigits = this.#cachedRoundOpts.maximumFractionDigits + 1;
-        }
-        else
-        {
-            //JSBD.#ValidateAndSanitiseRoundOpts (this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts);
-            maxFractionDigits = this.#cachedRoundOpts.maximumFractionDigits + 1;
-        }
-
-        if (dDiff > 0)
-        {
-            let rhsLen = rhsStr.length + -dDiff;
-            if (rhsStr[0] === "-") rhsLen -= 1;
-
-            let lhsLen = lhsStr[0] === "-" ? lhsStr.length - 1 : lhsStr.length;
-
-            zeroCount = lhsLen > rhsLen ? lhsLen - rhsLen + maxFractionDigits : maxFractionDigits;
-
-            strAsInt = BigInt (lhsStr + "0".repeat (zeroCount));
-            str2AsInt = BigInt (`${rhsStr}${"0".repeat (dDiff)}`);
-        }
-        else
-        {
-            let lhsLen = lhsStr.length + -dDiff;
-            if (lhsStr[0] === "-") lhsLen -= 1;
-
-            let rhsLen = rhsStr[0] === "-" ? rhsStr.length - 1 : rhsStr.length;
-
-            zeroCount = rhsLen > lhsLen ? rhsLen - lhsLen + maxFractionDigits : maxFractionDigits;
-
-            strAsInt = BigInt (`${lhsStr}${"0".repeat (-dDiff + zeroCount)}`);
-            str2AsInt = BigInt (rhsStr);
-        }
-
-        if (str2AsInt === 0n) throw new RangeError ("Division by zero");
-        
-        let added = strAsInt / str2AsInt;
-
-        let addedAbsAsStr;
-        let preAbsLength;
-        let postAbsLength;
-        let signStr;
-
-        if (added < 0n)
-        {
-            addedAbsAsStr = (-added).toString ();
-            preAbsLength = addedAbsAsStr.length;
-            signStr = "-";
-        }
-        else
-        {
-            addedAbsAsStr = added.toString ();
-            preAbsLength = addedAbsAsStr.length;
-            signStr = "";
-        }
-        
-        addedAbsAsStr = JSBD.#StripTrailingZeros (addedAbsAsStr, zeroCount);
-        postAbsLength = addedAbsAsStr.length;
-
-        if (postAbsLength === 0) return JSBD.#ZERO;
-
-        zeroCount -= preAbsLength - postAbsLength;
-        
-        if (postAbsLength <= zeroCount)
-        {
-            let diff = zeroCount - postAbsLength;
-
-            return JSBD.#DoRound (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, zeroCount, this.#cachedRoundOpts.maximumFractionDigits + diff, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
-        }
-        else 
-        {
-            return JSBD.#DoRound (signStr + addedAbsAsStr, zeroCount, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
+            return JSBD.#DoRound (signStr + addedAbsAsStr, zeroCount, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup, this.#cachedRoundOpts.precisionMode, diff);
         }
     }
 
@@ -1610,7 +1427,7 @@ export default class JSBD
 
             if (typeof roundOpts === "object")
             {
-                return JSBD.#internalRound (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces, roundOpts);
+                return JSBD.#internalRound (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces, roundOpts, -diff);
             }
 
             return JSBD.#Make (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces);
@@ -1619,7 +1436,9 @@ export default class JSBD
         {
             if (typeof roundOpts === "object")
             {
-                return JSBD.#internalRound (signStr + addedAbsAsStr, resultDecPlaces, roundOpts);
+                let diff = resultDecPlaces - postAbsLength;
+
+                return JSBD.#internalRound (signStr + addedAbsAsStr, resultDecPlaces, roundOpts, diff);
             }
 
             return JSBD.#Make (signStr + addedAbsAsStr, resultDecPlaces);
@@ -1653,6 +1472,7 @@ export default class JSBD
             if (roundOpts.maximumFractionDigits !== undefined) this.#cachedRoundOpts.maximumFractionDigits = roundOpts.maximumFractionDigits;
             if (roundOpts.roundingMode !== undefined) this.#cachedRoundOpts.roundingMode = roundOpts.roundingMode;
             if (roundOpts.roundingIncrement !== undefined) this.#cachedRoundOpts.roundingIncrement = roundOpts.roundingIncrement;
+            if (roundOpts.precisionMode !== undefined) this.#cachedRoundOpts.precisionMode = roundOpts.precisionMode;
 
             JSBD.#ValidateAndSanitiseRoundOpts (this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts);
 
@@ -1734,19 +1554,16 @@ export default class JSBD
 
             zeroCount -= (preAbsLength - postAbsLength);// + lhsDecPlaces;
             
-            let diff = postAbsLength - (zeroCount - resultDecPlaces);// Number ((BigInt (lhsDecPlaces) * -rhs)));
+            let newDecCount = zeroCount - resultDecPlaces;
+            let diff = postAbsLength - (newDecCount);// Number ((BigInt (lhsDecPlaces) * -rhs)));
 
             if (diff <= 0)
             {
-                let newDecCount = -diff + postAbsLength;
-
-                return JSBD.#DoRound (`${signStr}${"0".repeat (-diff + 1)}${addedAbsAsStr}`, newDecCount, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
+                return JSBD.#DoRound (`${signStr}${"0".repeat (-diff + 1)}${addedAbsAsStr}`, newDecCount, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup, this.#cachedRoundOpts.precisionMode, diff);
             }
             else
             {
-                let newDecCount = postAbsLength - diff;
-
-                return JSBD.#DoRound (signStr + addedAbsAsStr, newDecCount, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
+                return JSBD.#DoRound (signStr + addedAbsAsStr, newDecCount, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup, this.#cachedRoundOpts.precisionMode, diff);
             }
         }
         else
@@ -1800,11 +1617,13 @@ export default class JSBD
             {
                 let diff = resultDecPlaces - postAbsLength;
 
-                return JSBD.#DoRound (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
+                return JSBD.#DoRound (`${signStr}${"0".repeat (diff + 1)}${addedAbsAsStr}`, resultDecPlaces, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup, this.#cachedRoundOpts.precisionMode, -diff);
             }
             else
             {
-                return JSBD.#DoRound (signStr + addedAbsAsStr, resultDecPlaces, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup);
+                let diff = postAbsLength - resultDecPlaces;
+
+                return JSBD.#DoRound (signStr + addedAbsAsStr, resultDecPlaces, this.#cachedRoundOpts.maximumFractionDigits, this.#cachedRoundOpts.roundingMode, this.#cachedRoundOpts.incrSetup, this.#cachedRoundOpts.precisionMode, diff);
             }
         }
     }
@@ -3161,4 +2980,4 @@ export default class JSBD
     static {
         JSBD.#staticConstructor ();
     }
-}
+}JSBD.round (JSBD.BigD ("69.1230000005"), {roundingMode: "halfExpand", maximumFractionDigits: 3})

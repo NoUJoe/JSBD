@@ -24,9 +24,6 @@ export default class JSBD
     static subtract(lhs: JSBD, rhs: JSBD, roundOpts?: DecimalRoundingOptions): JSBD;
     static multiply(lhs: JSBD, rhs: JSBD, roundOpts?: DecimalRoundingOptions): JSBD;
     static divide(lhs: JSBD, rhs: JSBD, roundOpts?: DecimalRoundingOptions): JSBD;
-    static divideSignif1(lhs: JSBD, rhs: JSBD, roundOpts?: DecimalRoundingOptions): JSBD;
-    static divideSignif2(lhs: JSBD, rhs: JSBD, roundOpts?: DecimalRoundingOptions): JSBD;
-    static divideSignif3(lhs: JSBD, rhs: JSBD, roundOpts?: DecimalRoundingOptions): JSBD;
     static remainder(lhs: JSBD, rhs: JSBD, roundOpts?: DecimalRoundingOptions): JSBD;
     static exponentiate(lhs: JSBD, rhs: JSBD, roundOpts?: DecimalRoundingOptions): JSBD;
     
@@ -63,4 +60,5 @@ export interface DecimalRoundingOptions
   roundingMode?: "trunc" | "expand" | "floor" | "ceil" | "halfTrunc" | "halfExpand" | "halfFloor" | "halfCeil" | "halfEven";
   roundingIncrement?: 1 | 2 | 5 | 10 | 20 | 25 | 50 | 100 | 200 | 250 | 500 | 1000 | 2000 | 2500 | 5000;
   maxFractionDigits?: number;
+  precisionMode?: "fractional" | "significant" | "significantFullInt" | "significantFlex";
 }
