@@ -533,7 +533,7 @@ export default class JSBD
                     {
                         if (strVal.codePointAt (i) !== 48)
                         {
-                            expFromMostSignificant = i - startI;
+                            expFromMostSignificant = startI - i;
                             break;
                         }
                     }
