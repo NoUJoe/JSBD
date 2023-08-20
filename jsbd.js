@@ -330,6 +330,15 @@ export default class JSBD
         return JSBD.#Make (signStr + strIntegerPart + strFractionPart, strFractionPart.length);
     }
 
+    static #CopyOptionsObject (target, source)
+    {
+        target.maximumFractionDigits = source.maximumFractionDigits;
+        target.roundingMode = source.roundingMode;
+        target.roundingIncrement = source.roundingIncrement;
+        target.precisionMode = source.precisionMode;
+        target.incrSetup = source.incrSetup;
+    }
+    
     static #ConstructFromObjectType (value)
     {
         if (value instanceof JSBD) return value;
@@ -489,7 +498,7 @@ export default class JSBD
             return val;
         }
 
-        Object.assign (this.#cachedRoundOpts, this.#defaultGenericRoundOpts);
+        JSBD.#CopyOptionsObject (this.#cachedRoundOpts, this.#defaultGenericRoundOpts);
 
         if (opts.maximumFractionDigits !== undefined) this.#cachedRoundOpts.maximumFractionDigits = opts.maximumFractionDigits;
         if (opts.roundingMode !== undefined) this.#cachedRoundOpts.roundingMode = opts.roundingMode;
@@ -548,7 +557,7 @@ export default class JSBD
 
     static #internalRound (strVal, decPlaces, opts, expFromMostSignificant)
     {
-        Object.assign (this.#cachedRoundOpts, this.#defaultGenericRoundOpts);
+        JSBD.#CopyOptionsObject (this.#cachedRoundOpts, this.#defaultGenericRoundOpts);
 
         if (opts.maximumFractionDigits !== undefined) this.#cachedRoundOpts.maximumFractionDigits = opts.maximumFractionDigits;
         if (opts.roundingMode !== undefined) this.#cachedRoundOpts.roundingMode = opts.roundingMode;
@@ -1289,7 +1298,7 @@ export default class JSBD
         let zeroCount;
         let maxFractionDigits;
 
-        Object.assign (this.#cachedRoundOpts, this.#divDefaultRoundOpts);
+        JSBD.#CopyOptionsObject (this.#cachedRoundOpts, this.#divDefaultRoundOpts);
 
         if (typeof roundOpts === "object")
         {
@@ -1467,7 +1476,7 @@ export default class JSBD
 
         let maxFractionDigits, outputMaxFractionDigits;
 
-        Object.assign (this.#cachedRoundOpts, this.#divDefaultRoundOpts);
+        JSBD.#CopyOptionsObject (this.#cachedRoundOpts, this.#divDefaultRoundOpts);
 
         if (typeof roundOpts === "object")
         {
